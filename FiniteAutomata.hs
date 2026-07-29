@@ -1,5 +1,6 @@
 module FiniteAutomata where
 import Data.Tree
+import Data.Monoid
 
 
 type NFATF c s = ([(c, s, s)], [(s, s)])
@@ -57,11 +58,11 @@ treeLeaves tree = foldTree (\x xs -> if null xs then [x] else (concat xs)) tree
 
 isWordAccepted :: Ord c => Ord s => NFA c s -> [c] -> Bool
 isWordAccepted nfa word =
-  any test
-  (treeLeaves (withoutCycles (nfaComputationTree nfa word)))
+  getAny (foldMap foldFn (withoutCycles (nfaComputationTree nfa word)))
   where
-    test (remaining, finalSt) =
-      finalSt `elem` acceptSts && null remaining
+    -- foldFn :: ([c], s) -> Any
+    foldFn ([], st) = Any (st `elem` acceptSts)
+    foldFn _        = Any False
     acceptSts = nfaAcceptStates nfa
 
 {-

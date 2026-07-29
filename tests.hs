@@ -81,7 +81,7 @@ fooMaybeBarRepeated =
 
 {-
 language: foo(bar)+
-caracteristics: points out a flaw in the current algorithm that tests for acceptance of a word. currently it accepts if there is a LEAF with no characters left in an accept state, but it should be any NODE with such characteristics.
+caracteristics: one empty transition. accepts infinite number of words. computation trees are linear.
 -}
 fooBarRepeated :: NFA Char Int
 fooBarRepeated =
