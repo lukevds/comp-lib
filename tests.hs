@@ -100,6 +100,5 @@ fooBarRepeated =
   )
   [7]
 
-
-printComputationTree :: Ord c => Ord s => Show c => Show s => NFA c s -> [c] -> IO ()
+printComputationTree :: (Ord c, Ord s, Show c, Show s) => NFA c s -> [c] -> IO ()
 printComputationTree nfa word = putStrLn (drawTree (fmap show (nfaComputationTree nfa word)))

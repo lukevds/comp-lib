@@ -13,7 +13,7 @@ data NFA c s = NFA
   , nfaAcceptStates :: [s] }
 
 
-reachableByChar :: Ord c => Ord s => NFATF c s -> c -> s -> [[s]]
+reachableByChar :: (Ord c, Ord s) => NFATF c s -> c -> s -> [[s]]
 reachableByChar nfaTf char s = go nfaTf char [s]
   where
     go nfaTf                 char []      = []
@@ -28,7 +28,7 @@ treePaths Node { rootLabel=r, subForest=[] } = [[r]]
 treePaths Node { rootLabel=r, subForest=s  } = [r : x | nxt <- s, x <- (treePaths nxt)]
 
 
-nfaComputationTree :: Ord c => Ord s => NFA c s -> [c] -> Tree ([c], s)
+nfaComputationTree :: (Ord c, Ord s) => NFA c s -> [c] -> Tree ([c], s)
 nfaComputationTree nfa word = unfoldTree go (word, initSt)
   where
     -- go :: ([c], s) -> (([c], s), [([c], s)])
@@ -42,7 +42,7 @@ nfaComputationTree nfa word = unfoldTree go (word, initSt)
     initSt = nfaInitialState nfa
     (charTrans, empTrans) = nfaTransFunc nfa
 
-withoutCycles :: Ord c => Ord s => Tree ([c], s) -> Tree ([c], s)
+withoutCycles :: (Ord c, Ord s) => Tree ([c], s) -> Tree ([c], s)
 withoutCycles tree = go [] tree
   where
     go _   (Node l             [])        = Node l []
@@ -56,7 +56,7 @@ withoutCycles tree = go [] tree
 treeLeaves :: Tree a -> [a]
 treeLeaves tree = foldTree (\x xs -> if null xs then [x] else (concat xs)) tree
 
-isWordAccepted :: Ord c => Ord s => NFA c s -> [c] -> Bool
+isWordAccepted :: (Ord c, Ord s) => NFA c s -> [c] -> Bool
 isWordAccepted nfa word =
   getAny (foldMap foldFn (withoutCycles (nfaComputationTree nfa word)))
   where
