@@ -1,19 +1,38 @@
 import FiniteAutomata
 import Data.Tree
 
-{-
-(o|f)+
-alph=fo
-states=1..2
-init=1
-accept={2}
-tf=
-1 o = 2
-1 f = 2
-2 o = 2
-2 f = 2
-characteristics: simple. translates directly to dfa
--}
+
+
+--                     id      nfa      accept         reject
+type TestInput  c s = (String, NFA c s, [[c]],         [[c]])
+type TestOutput c s = (String, NFA c s, [([c], Bool)], [([c], Bool)])
+
+
+testNfaWordsAccept :: (Ord c, Ord s) => TestInput c s -> TestOutput c s
+testNfaWordsAccept (name, nfa, shouldAccept, shouldReject) =
+  (
+    name,
+    nfa,
+    [(word, isWordAccepted nfa word) | word <- shouldAccept],
+    [(word, isWordAccepted nfa word) | word <- shouldReject]
+  )
+
+printWordAcceptTests :: (Ord c, Ord s) => [TestInput c s] -> IO ()
+printWordAcceptTests tests = sequence_ output
+  where
+    results = [(test, testNfaWordsAccept test) | test <- tests]
+    testAccept = \(_, x) -> x
+    testReject = not . testAccept
+    output = [putStrLn
+              ("nfa: " <> name <>
+               " acceptAll: " <> (show (all testAccept accept)) <>
+               " rejectAll: " <> (show (all testReject reject)))
+             | (_, (name, _, accept, reject)) <- results]
+
+
+printComputationTree :: (Ord c, Ord s, Show c, Show s) => NFA c s -> [c] -> IO ()
+printComputationTree nfa word = putStrLn (drawTree (fmap show (nfaComputationTree nfa word)))
+
 
 {-
 language: { foo, foobar, foobarbaz }
@@ -39,6 +58,25 @@ fooBarBaz =
   )
   [4,7,10]
 
+fooBarBazAcceptTests :: TestInput Char Int
+fooBarBazAcceptTests =
+  (
+    "foo|foobar|foobarbaz",
+    fooBarBaz,
+    [ ['f','o','o']
+    , ['f','o','o','b','a','r']
+    , ['f','o','o','b','a','r','b','a','z']
+    ],
+    [ []
+    , ['f','o','o','o']
+    , ['f','f','o','o']
+    , ['f','f','o','o','b','a','r','b','a','z']
+    , ['f','o','o','b','a']
+    , ['f','o','o','b','a','z']
+    , ['f','o','o','b','a','z','b','a','r']
+    ]
+  )
+
 {-
 language: { fo^n : n is even }
 characteristics: pretty straight forward. no empty transitions. accepts an infinite number of words. computation trees are linear.
@@ -57,6 +95,24 @@ foEven =
     []
   )
   [4]
+
+foEvenAcceptTests :: TestInput Char Int
+foEvenAcceptTests =
+  (
+    "{fo^n : n is even}",
+    foEven,
+    [ ['f','o','o']
+    , ['f','o','o','o','o']
+    , ['f','o','o','o','o','o','o']
+    ],
+    [ []
+    , ['f','o']
+    , ['f','f','o','o']
+    , ['f','o','o','o']
+    , ['o','o']
+    ]
+  )
+
 
 {-
 language: foo(bar)*
@@ -79,6 +135,23 @@ fooMaybeBarRepeated =
   )
   [4]
 
+fooMaybeBarAcceptTests :: TestInput Char Int
+fooMaybeBarAcceptTests =
+  (
+    "foo(bar)*",
+    fooMaybeBarRepeated,
+    [ ['f','o','o']
+    , ['f','o','o','b','a','r']
+    , ['f','o','o','b','a','r','b','a','r']
+    , ['f','o','o','b','a','r','b','a','r','b','a','r']
+    ],
+    [ []
+    , ['f','f','o','o','b','a','r']
+    , ['f','o','o','b','a','z']
+    , ['f','o','b','a','r']
+    ]
+  )
+
 {-
 language: foo(bar)+
 caracteristics: one empty transition. accepts infinite number of words. computation trees are linear.
@@ -100,5 +173,68 @@ fooBarRepeated =
   )
   [7]
 
-printComputationTree :: (Ord c, Ord s, Show c, Show s) => NFA c s -> [c] -> IO ()
-printComputationTree nfa word = putStrLn (drawTree (fmap show (nfaComputationTree nfa word)))
+fooBarAcceptTests :: TestInput Char Int
+fooBarAcceptTests =
+  (
+    "foo(bar)+",
+    fooBarRepeated,
+    [ ['f','o','o','b','a','r']
+    , ['f','o','o','b','a','r','b','a','r']
+    , ['f','o','o','b','a','r','b','a','r','b','a','r']
+    ],
+    [ []
+    , ['f','f','o','o','b','a','r']
+    , ['f','o','o']
+    , ['f','o','b','a','r']
+    , ['f','o','o','b','a','r','b','a','z']
+    , ['f','o','o','b','a','z']
+    ]
+  )
+
+
+{-
+language: (o|f)+
+characteristics: simple, translates directly to dfa
+-}
+letterOorFoneOrMoreTimes :: NFA Char Int
+letterOorFoneOrMoreTimes =
+  NFA ['o','f']
+  [1..2]
+  1
+  (
+    [ ('o', 1, 2)
+    , ('f', 1, 2)
+    , ('o', 2, 2)
+    , ('f', 2, 2)
+    ],
+    []
+  )
+  [2]
+
+letterOorFAcceptTests :: TestInput Char Int
+letterOorFAcceptTests =
+  (
+    "(f|o)+",
+    letterOorFoneOrMoreTimes,
+    [ ['o','f']
+    , ['f','o']
+    , ['f','f']
+    , ['o','o']
+    , ['f']
+    , ['o']
+    , ['f','f','o','o']
+    , ['f','f','o','o','o']
+    , ['f','f','f','o','o']
+    ],
+    [ []
+    , ['f','o','o','b']
+    ]
+  )
+
+main :: IO ()
+main = printWordAcceptTests
+  [ fooBarBazAcceptTests
+  , foEvenAcceptTests
+  , fooMaybeBarAcceptTests
+  , fooBarAcceptTests
+  , letterOorFAcceptTests ]
