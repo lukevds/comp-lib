@@ -231,6 +231,25 @@ letterOorFAcceptTests =
     ]
   )
 
+concatenated1 = nfaConcatenate fooBarBaz fooBarBaz
+
+concatenated1AcceptTests :: TestInput Char (Bool,Int,Int)
+concatenated1AcceptTests =
+  (
+    "{ww | w \\in {\"foo\",\"foobar\", \"foobarbaz\"}",
+    concatenated1,
+    let
+      x = [ ['f','o','o']
+          , ['f','o','o','b','a','r']
+          , ['f','o','o','b','a','r','b','a','z']]
+    in [w++w' | w <- x, w' <- x],
+    [ []
+    , ['f','o','o']
+    , ['f','o','o','b','a','r']
+    , ['f','o','o','b','a','r','b','a','z'] ]
+  )
+
+
 main :: IO ()
 main = printWordAcceptTests
   [ fooBarBazAcceptTests

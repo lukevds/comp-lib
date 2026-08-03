@@ -1,6 +1,7 @@
 module FiniteAutomata where
 import Data.Tree
 import Data.Monoid
+import Data.List
 
 
 type NFATF c s = ([(c, s, s)], [(s, s)])
@@ -65,11 +66,38 @@ isWordAccepted nfa word =
     foldFn _        = Any False
     acceptSts = nfaAcceptStates nfa
 
+mapNfaStates :: (Ord c, Ord s, Ord s2) => (s -> s2) -> NFA c s -> NFA c s2
+mapNfaStates f (NFA a sts init (ct, et) acpt) =
+  NFA a
+  [f s | s <- sts]
+  (f init)
+  ( [(c, f s, f s') | (c, s, s') <- ct]
+  , [(f s, f s') | (s, s') <- et] )
+  [f s | s <- acpt]
+
+nfaConcatenate :: (Ord c, Ord s, Ord s2) => NFA c s -> NFA c s2 -> NFA c (Bool,s,s2)
+nfaConcatenate nfaa nfab =
+  NFA (aa `union` ab)
+  (sa' ++ sb')
+  inita'
+  (cta' ++ ctb', eta' ++ etb' ++ newt)
+  acptb'
+  where
+    aa = nfaAlphabet nfaa
+    ab = nfaAlphabet nfab
+    inita = nfaInitialState nfaa
+    initb = nfaInitialState nfab
+    nfaa'@(NFA aa' sa' inita' tfa' acpta') =
+      mapNfaStates (\st -> (True,st,initb)) nfaa
+    nfab'@(NFA ab' sb' initb' tfb' acptb') =
+      mapNfaStates (\st -> (False,inita,st)) nfab
+    (cta', eta') = tfa'
+    (ctb', etb') = tfb'
+    newt = [(st, initb') | st <- acpta']
+
+
 {-
 todo:
-- nfas examples for testing
-- tests
-- concat
 - alternative
 - star
 - dfa
