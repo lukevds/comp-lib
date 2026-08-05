@@ -116,7 +116,28 @@ nfaUnite nfaa nfab =
     newInit = (EQ,inita,initb)
     newt = [(newInit, inita'), (newInit, initb')]
 
-
+-- if the nfa is well-formed, it will never return Nothing
+-- I should hide the default type constructor
+mapNfaStatesToInt :: (Ord c, Ord s) => NFA c s -> Maybe (NFA c Int)
+mapNfaStatesToInt (NFA a sts init (ct, et) acpt) =
+  case (init', ct', et', acpt') of
+    (Just ninit, Just nct, Just net, Just nacpt) ->
+      Just (NFA a indexes ninit (nct, net) nacpt)
+    _ -> Nothing
+  where
+    indexes = [i | (i,_) <- zip [0..] sts]
+    init' = elemIndex init sts
+    ct' = sequence [case (c, elemIndex st sts, elemIndex nst sts) of
+                      (_, Nothing , _        ) -> Nothing
+                      (_, _       , Nothing  ) -> Nothing
+                      (c, Just st', Just nst') -> Just (c, st', nst')
+                   | (c, st, nst) <- ct]
+    et' = sequence [case (elemIndex st sts, elemIndex nst sts) of
+                      (Nothing , _        ) -> Nothing
+                      (_       , Nothing  ) -> Nothing
+                      (Just st', Just nst') -> Just (st', nst')
+                   | (st, nst) <- et]
+    acpt' = sequence [elemIndex st sts | st <- acpt]
 {-
 todo:
 - alternative

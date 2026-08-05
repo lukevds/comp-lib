@@ -1,6 +1,6 @@
 import FiniteAutomata
 import Data.Tree
-
+import Data.Maybe
 
 
 --                     id      nfa      accept         reject
@@ -233,11 +233,11 @@ letterOorFAcceptTests =
 
 concatenated1 = nfaConcatenate fooBarBaz fooBarBaz
 
-concatenated1AcceptTests :: TestInput Char (Bool,Int,Int)
+concatenated1AcceptTests :: TestInput Char Int
 concatenated1AcceptTests =
   (
     "{ww | w \\in {\"foo\",\"foobar\", \"foobarbaz\"}",
-    concatenated1,
+    fromJust (mapNfaStatesToInt concatenated1),
     let
       x = [ ['f','o','o']
           , ['f','o','o','b','a','r']
@@ -249,6 +249,8 @@ concatenated1AcceptTests =
     , ['f','o','o','b','a','r','b','a','z'] ]
   )
 
+united1 = nfaUnite fooBarBaz foEven
+
 
 main :: IO ()
 main = printWordAcceptTests
@@ -256,4 +258,5 @@ main = printWordAcceptTests
   , foEvenAcceptTests
   , fooMaybeBarAcceptTests
   , fooBarAcceptTests
-  , letterOorFAcceptTests ]
+  , letterOorFAcceptTests
+  , concatenated1AcceptTests ]
