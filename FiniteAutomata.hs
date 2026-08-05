@@ -95,6 +95,27 @@ nfaConcatenate nfaa nfab =
     (ctb', etb') = tfb'
     newt = [(st, initb') | st <- acpta']
 
+nfaUnite :: (Ord c, Ord s, Ord s2) => NFA c s -> NFA c s2 -> NFA c (Ordering,s,s2)
+nfaUnite nfaa nfab =
+  NFA (aa `union` ab)
+  (sa' ++ sb')
+  newInit
+  (cta' ++ ctb', eta' ++ etb' ++ newt)
+  (acpta' ++ acptb')
+  where
+    aa = nfaAlphabet nfaa
+    ab = nfaAlphabet nfab
+    inita = nfaInitialState nfaa
+    initb = nfaInitialState nfab
+    nfaa'@(NFA aa' sa' inita' tfa' acpta') =
+      mapNfaStates (\st -> (LT,st,initb)) nfaa
+    nfab'@(NFA ab' sb' initb' tfb' acptb') =
+      mapNfaStates (\st -> (GT,inita,st)) nfab
+    (cta', eta') = tfa'
+    (ctb', etb') = tfb'
+    newInit = (EQ,inita,initb)
+    newt = [(newInit, inita'), (newInit, initb')]
+
 
 {-
 todo:
