@@ -40,7 +40,7 @@ characteristics: pretty straight forward. no empty transitions. if a word is rej
 -}
 fooBarBaz :: NFA Char Int
 fooBarBaz =
-  NFA ['f','o','b','a','r','z']
+  fromJust $ makeNfa ['f','o','b','a','r','z']
   [1..10]
   1
   (
@@ -83,7 +83,7 @@ characteristics: pretty straight forward. no empty transitions. accepts an infin
 -}
 foEven :: NFA Char Int
 foEven =
-  NFA ['f','o']
+  fromJust $ makeNfa ['f','o']
   [1..4]
   1
   (
@@ -120,7 +120,7 @@ caracteristics: one empty transition, but could be modeled without it. accepts i
 -}
 fooMaybeBarRepeated :: NFA Char Int
 fooMaybeBarRepeated =
-  NFA ['f','o','b','a','r']
+  fromJust $ makeNfa ['f','o','b','a','r']
   [1..7]
   1
   (
@@ -158,7 +158,7 @@ caracteristics: one empty transition. accepts infinite number of words. computat
 -}
 fooBarRepeated :: NFA Char Int
 fooBarRepeated =
-  NFA ['f','o','b','a','r']
+  fromJust $ makeNfa ['f','o','b','a','r']
   [1..7]
   1
   (
@@ -198,7 +198,7 @@ characteristics: simple, translates directly to dfa
 -}
 letterOorFoneOrMoreTimes :: NFA Char Int
 letterOorFoneOrMoreTimes =
-  NFA ['o','f']
+  fromJust $ makeNfa ['o','f']
   [1..2]
   1
   (
@@ -231,18 +231,17 @@ letterOorFAcceptTests =
     ]
   )
 
-concatenated1 = nfaConcatenate fooBarBaz fooBarBaz
+concatenated1 = (mapNfaStatesToInt (nfaConcatenate fooBarBaz fooBarBaz))
 
 concatenated1AcceptTests :: TestInput Char Int
 concatenated1AcceptTests =
   (
-    "{ww | w \\in {\"foo\",\"foobar\", \"foobarbaz\"}",
-    fromJust (mapNfaStatesToInt concatenated1),
+    "{ww | w \\in {\"foo\",\"foobar\", \"foobarbaz\"}}",
+    concatenated1,
     let
-      x = [ ['f','o','o']
-          , ['f','o','o','b','a','r']
-          , ['f','o','o','b','a','r','b','a','z']]
-    in [w++w' | w <- x, w' <- x],
+      (_,_,x,_) = fooBarBazAcceptTests
+    in
+      [w++w' | w <- x, w' <- x],
     [ []
     , ['f','o','o']
     , ['f','o','o','b','a','r']

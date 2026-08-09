@@ -1,4 +1,9 @@
-module FiniteAutomata where
+module FiniteAutomata
+  ( NFATF , NFA , makeNfa
+   , nfaComputationTree , isWordAccepted
+   , nfaConcatenate , nfaUnite
+   , mapNfaStatesToInt )
+where
 import Data.Tree
 import Data.Monoid
 import Data.List
@@ -12,6 +17,22 @@ data NFA c s = NFA
   , nfaInitialState :: s
   , nfaTransFunc :: NFATF c s
   , nfaAcceptStates :: [s] }
+
+makeNfa :: (Ord c, Ord s) => [c] -> [s] -> s -> NFATF c s -> [s] -> Maybe (NFA c s)
+makeNfa a sts init (ct, et) acpt =
+  if
+    init `elem` sts &&
+    all
+      (\(c, st, nst) -> c `elem` a && st `elem` sts && nst `elem` sts)
+      ct &&
+    all
+      (\(st, nst) -> st `elem` sts && nst `elem` sts)
+      et &&
+    all (\st -> st `elem` sts) acpt
+  then
+    Just (NFA a sts init (ct, et) acpt)
+  else
+    Nothing
 
 
 reachableByChar :: (Ord c, Ord s) => NFATF c s -> c -> s -> [[s]]
@@ -116,31 +137,20 @@ nfaUnite nfaa nfab =
     newInit = (EQ,inita,initb)
     newt = [(newInit, inita'), (newInit, initb')]
 
--- if the nfa is well-formed, it will never return Nothing
--- I should hide the default type constructor
-mapNfaStatesToInt :: (Ord c, Ord s) => NFA c s -> Maybe (NFA c Int)
-mapNfaStatesToInt (NFA a sts init (ct, et) acpt) =
-  case (init', ct', et', acpt') of
-    (Just ninit, Just nct, Just net, Just nacpt) ->
-      Just (NFA a indexes ninit (nct, net) nacpt)
-    _ -> Nothing
+mapNfaStatesToInt :: (Ord c, Ord s) => NFA c s -> NFA c Int
+mapNfaStatesToInt nfa = (NFA a indexes ninit (nct, net) nacpt)
   where
+    sts = nfaStates nfa
     indexes = [i | (i,_) <- zip [0..] sts]
-    init' = elemIndex init sts
-    ct' = sequence [case (c, elemIndex st sts, elemIndex nst sts) of
-                      (_, Nothing , _        ) -> Nothing
-                      (_, _       , Nothing  ) -> Nothing
-                      (c, Just st', Just nst') -> Just (c, st', nst')
-                   | (c, st, nst) <- ct]
-    et' = sequence [case (elemIndex st sts, elemIndex nst sts) of
-                      (Nothing , _        ) -> Nothing
-                      (_       , Nothing  ) -> Nothing
-                      (Just st', Just nst') -> Just (st', nst')
-                   | (st, nst) <- et]
-    acpt' = sequence [elemIndex st sts | st <- acpt]
+    (NFA a _ init (ct, et) acpt) = mapNfaStates (\st -> (elemIndex st sts)) nfa
+    Just ninit = init
+    nct = [(c, st, nst) | (c, Just st, Just nst) <- ct]
+    net = [(st, nst) | (Just st, Just nst) <- et]
+    Just nacpt = sequence acpt
+
 {-
 todo:
-- alternative
+- constructor tests
 - star
 - dfa
 - nfa to dfa
