@@ -1,7 +1,7 @@
 module FiniteAutomata
   ( NFATF , NFA , makeNfa
    , nfaComputationTree , isWordAccepted
-   , nfaConcatenate , nfaUnite
+   , nfaConcatenate , nfaUnite , nfaStar
    , mapNfaStatesToInt )
 where
 import Data.Tree
@@ -137,6 +137,20 @@ nfaUnite nfaa nfab =
     newInit = (EQ,inita,initb)
     newt = [(newInit, inita'), (newInit, initb')]
 
+nfaStar :: (Ord c, Ord s) => NFA c s -> NFA c (Bool,s)
+nfaStar nfa =
+  NFA a
+  (newInit:sts')
+  newInit
+  (ct', (newInit, init'):(et' ++ [(st, init') | st <- acpt']))
+  (newInit:acpt')
+  where
+    a = nfaAlphabet nfa
+    init = nfaInitialState nfa
+    (NFA _ sts' init' (ct', et') acpt') =
+      mapNfaStates (\st -> (True,st)) nfa
+    newInit = (False,init)
+
 mapNfaStatesToInt :: (Ord c, Ord s) => NFA c s -> NFA c Int
 mapNfaStatesToInt nfa = (NFA a indexes ninit (nct, net) nacpt)
   where
@@ -147,11 +161,10 @@ mapNfaStatesToInt nfa = (NFA a indexes ninit (nct, net) nacpt)
     nct = [(c, st, nst) | (c, Just st, Just nst) <- ct]
     net = [(st, nst) | (Just st, Just nst) <- et]
     Just nacpt = sequence acpt
-
 {-
 todo:
 - constructor tests
-- star
+- more tests
 - dfa
 - nfa to dfa
 
