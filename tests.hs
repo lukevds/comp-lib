@@ -235,20 +235,30 @@ concatenated1 = (mapNfaStatesToInt (nfaConcatenate fooBarBaz fooBarBaz))
 
 concatenated1AcceptTests :: TestInput Char Int
 concatenated1AcceptTests =
-  (
-    "{ww | w \\in {\"foo\",\"foobar\", \"foobarbaz\"}}",
-    concatenated1,
-    let
-      (_,_,x,_) = fooBarBazAcceptTests
-    in
-      [w++w' | w <- x, w' <- x],
-    [ []
-    , ['f','o','o']
-    , ['f','o','o','b','a','r']
-    , ['f','o','o','b','a','r','b','a','z'] ]
-  )
+  let
+    (_,_,xaccept,xreject) = fooBarBazAcceptTests
+  in
+    (
+      "{ww | w \\in foo|foobar|foobarbaz}",
+      concatenated1,
+      [w++w' | w <- xaccept, w' <- xaccept],
+      xaccept ++ xreject
+    )
 
 united1 = mapNfaStatesToInt (nfaUnite fooBarBaz foEven)
+
+united1AcceptTests :: TestInput Char Int
+united1AcceptTests =
+  let
+    (_,_,xaccept,xreject) = fooBarBazAcceptTests
+    (_,_,yaccept,yreject) = foEvenAcceptTests
+  in
+    (
+      "{(foo|foobar|foobarbaz)|fo^n : n is even}",
+      united1,
+      xaccept ++ yaccept,
+      xreject ++ yreject
+    )
 
 
 main :: IO ()
@@ -258,4 +268,5 @@ main = printWordAcceptTests
   , fooMaybeBarAcceptTests
   , fooBarAcceptTests
   , letterOorFAcceptTests
-  , concatenated1AcceptTests ]
+  , concatenated1AcceptTests
+  , united1AcceptTests ]
