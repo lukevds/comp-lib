@@ -248,7 +248,7 @@ concatenated1AcceptTests =
     , ['f','o','o','b','a','r','b','a','z'] ]
   )
 
-united1 = nfaUnite fooBarBaz foEven
+united1 = mapNfaStatesToInt (nfaUnite fooBarBaz foEven)
 
 
 main :: IO ()

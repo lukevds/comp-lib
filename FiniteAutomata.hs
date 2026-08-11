@@ -1,5 +1,7 @@
 module FiniteAutomata
-  ( NFATF , NFA , makeNfa
+  ( NFATF
+  , NFA(nfaAlphabet, nfaStates, nfaInitialState, nfaTransFunc, nfaAcceptStates)
+  , makeNfa
    , nfaComputationTree , isWordAccepted
    , nfaConcatenate , nfaUnite , nfaStar
    , mapNfaStatesToInt )
@@ -119,7 +121,7 @@ nfaConcatenate nfaa nfab =
 nfaUnite :: (Ord c, Ord s, Ord s2) => NFA c s -> NFA c s2 -> NFA c (Ordering,s,s2)
 nfaUnite nfaa nfab =
   NFA (aa `union` ab)
-  (sa' ++ sb')
+  (newInit:(sa' ++ sb'))
   newInit
   (cta' ++ ctb', eta' ++ etb' ++ newt)
   (acpta' ++ acptb')
